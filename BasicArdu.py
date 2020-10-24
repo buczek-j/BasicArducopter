@@ -8,7 +8,7 @@ from MavLowLevel import *
 from CommonStructs import Frames, Waypoint
 
 class BasicArdu():
-    def __init__(self, frame=Frames.LLA, verbose=False, connection_string='tcp:127.0.0.1:5762', tolerance_location=1):
+    def __init__(self, frame=Frames.LLA, verbose=False, connection_string='tcp:127.0.0.1:5760', tolerance_location=2.0):
         '''
         Dronekit wrapper class for Ardupilot
         :param frame: vehicle coordinate frame
@@ -183,21 +183,21 @@ def main():
     drone = BasicArdu(frame=Frames.NED)    # connect to ArduPilot
 
     # takeoff drone
-    drone.handle_takeoff(10)   
+    drone.handle_takeoff(5)   
     drone.wait_for_target()   # wait to reach desired location
-
+    sleep(3)
     # goto first waypoint
-    drone.handle_waypoint(Frames.NED, 10, 0, -10, pi/2)
+    drone.handle_waypoint(Frames.NED, 10, 0, -5, 0)
     drone.wait_for_target()
-
+    sleep(3)
     # goto second wayoint
-    drone.handle_waypoint(Frames.NED, 0, 10, -10)
+    drone.handle_waypoint(Frames.NED, 0, 5, -5, 0)
     drone.wait_for_target()
-
+    sleep(3)
     # goto Home wayoint
-    drone.handle_waypoint(Frames.NED, 0, 0, -10)
+    drone.handle_waypoint(Frames.NED, 0, 0, -5, 0)
     drone.wait_for_target()
-
+    sleep(3)
     # land
     drone.handle_landing()
 
