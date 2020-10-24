@@ -68,9 +68,14 @@ ifconfig
 * Reboot the Intel Aero
 
 ### 5. Creating and Running Mission Files
-Missions are very easy to make with the BasicArdu wrapper. Here is an example mission:
+Missions are very easy to make with the BasicArdu wrapper. Note that different connection strings may be needed: 
+* Simulator: 'tcp:127.0.0.1:5762'
+* Intel Aero: 'tcp:127.0.0.1:5760'
+* USB connection (M100): '/dev/ttyACM0'
+Here is an example mission:
 ```
-from BasicArdu import BasicArdu
+from BasicArdu import BasicArdu     # Arducopter Wrapper Class
+from CommonStructs import Frames    # Enumerators for the frames of reference
 
 # Main Method
 def main():
@@ -93,9 +98,13 @@ def main():
     # goto second wayoint
     drone.handle_waypoint(Frames.NED, 0, 5.0, -5.0, 3.14/2) # 0 meters North, 5 meters East, -5 meters Down, Yaw angle pi/2 rad (East)
     drone.wait_for_target()
-    # ... Code to run at third waypoint ...
+    # ... Code to run at second waypoint ...
 
-
+    # Repeat for as many waypoints as needed, or forever
+    # . . .
+    # . . .
+    # . . .
+    
     # goto Home wayoint (starting position)
     drone.handle_waypoint(Frames.NED, 0, 0, -5.0, 0)
     drone.wait_for_target()

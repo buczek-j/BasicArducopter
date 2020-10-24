@@ -176,6 +176,13 @@ class BasicArdu():
 
         if self.verbose:
             print('Reached Target')
+    
+    def get_LLA(self):
+        '''
+        Method to return the current Lattitude, Longitude, and msl Altitude of the vehicle
+        :return (float) latitude, (float) longitude, (float) altitude msl
+        '''
+        return self.vehicle.location.global_frame.lat, self.vehicle.location.global_frame.lon, self.vehicle.location.global_frame.alt
 
 def main():
     # simple use example
