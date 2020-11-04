@@ -1,5 +1,25 @@
 # BasicArducopter
+# Table of Contents
+<!--ts-->
+   * [BasicArducopter](#basicarducopter)
+   * [Table of Contents](#table-of-contents)
+      * [Intel Aero Setup](#intel-aero-setup)
+         * [1. Preliminary Setup](#1-preliminary-setup)
+         * [2. Repository Setup](#2-repository-setup)
+         * [3. Install Arducopter](#3-install-arducopter)
+         * [4. Mission Planner / QGroundcontrol Setup](#4-mission-planner--qgroundcontrol-setup)
+         * [5. Creating and Running Mission Files](#5-creating-and-running-mission-files)
+      * [Simulator Setup](#simulator-setup)
+         * [Ubuntu 18.04 Setup](#ubuntu-1804-setup)
+            * [1. ROS and Gazebo Install](#1-ros-and-gazebo-install)
+            * [2. Ardupilot and Ardupilot_Gazebo Repos Installation](#2-ardupilot-and-ardupilot_gazebo-repos-installation)
+            * [3. Cloning this repo (BasicArdu)](#3-cloning-this-repo-basicardu)
+            * [4. Terminal Setup / Running the Simulations](#4-terminal-setup--running-the-simulations)
+         * [Ubuntu 20.04 Setup (WIP)](#ubuntu-2004-setup-wip)
 
+<!-- Added by: bucz, at: Wed 04 Nov 2020 01:40:00 PM EST -->
+
+<!--te-->
 ## Intel Aero Setup
 
 ### 1. Preliminary Setup
@@ -117,3 +137,88 @@ def main():
 if __name__ == '__main__':
     main()  # Calls main method if the python file is run directly (python3 filename.py)
 ```
+
+## Simulator Setup 
+
+### Ubuntu 18.04 Setup
+For Ubuntu 18.04 Environments, ROS Melodic is used. This README follows the Melodic guide for installing ROS Melodic, found [here](http://wiki.ros.org/melodic/Installation/Ubuntu).
+
+#### 1. ROS and Gazebo Install
+A bash script has been made to do the ROS Melodic and Gazebo setup:
+'''
+wget https://raw.githubusercontent.com/PX4/Devguide/master/build_scripts/ubuntu_sim_ros_melodic.sh
+source ubuntu_sim_ros_melodic.sh
+'''
+
+#### 2. Ardupilot and Ardupilot_Gazebo Repos Installation
+Before we can begin simulation, we must first make sure we have the correct repositories
+downloaded and installed. Your directories should have the following setup following this step:
+
+- root
+	- ardupilot (https://github.com/ArduPilot/ardupilot)
+	- ardupilot_gazebo (https://github.com/SwiftGust/ardupilot_gazebo)
+
+Follow the commands:
+
+````
+cd
+git clone --recurse-submodules https://github.com/ArduPilot/ardupilot
+
+cd 
+git clone https://github.com/SwiftGust/ardupilot_gazebo
+cd ardupilot_gazebo
+mkdir build
+cd build
+cmake ..
+make -j4
+sudo make install
+````
+
+Copy & Paste Followings at the end of .bashrc file 
+```
+source /usr/share/gazebo/setup.sh
+
+export GAZEBO_MODEL_PATH=~/ardupilot_gazebo/models:${GAZEBO_MODEL_PATH}
+export GAZEBO_MODEL_PATH=~/ardupilot_gazebo/models_gazebo:${GAZEBO_MODEL_PATH}
+export GAZEBO_RESOURCE_PATH=~/ardupilot_gazebo/worlds:${GAZEBO_RESOURCE_PATH}
+export GAZEBO_PLUGIN_PATH=~/ardupilot_gazebo/build:${GAZEBO_PLUGIN_PATH}
+```
+
+If you get the error: 
+`fatal error: ignition/math6/ignition/math/Vector3.hh: No such file or directory`
+`#include <ignition/math6/ignition/math/Vector3.hh>`
+When running the command "make -j4". Then follow the instructions at
+https://ignitionrobotics.org/api/math/6.4/install.html for both ignition math6 and math4.
+
+#### 3. Cloning this repo (BasicArdu)
+* Make sure that the following are installed 
+```
+sudo apt-get install python3 python3-pip git
+```
+ 
+ * Clone this repo (Typically in the ~/Documents folder)
+ ```
+ cd ~/Documents
+ git clone https://github.com/buczek-j/BasicArducopter.git
+ ```
+
+ * Install the required Python3 Libraries:
+ ```
+ pip3 install -r BasicArducopter/SetupFiles/requirements.txt
+ ```
+
+#### 4. Terminal Setup / Running the Simulations
+Open up 3 command terminals
+**Terminal 1: Starting the Arducopter Model**
+1. Navigate to `~/ardupilot/Tools/autotest`
+2. Run `sudo ./sim_vehicle.py -f gazebo-iris -v ArduCopter`
+
+**Terminal 2: Starting Gazebo Simulation Enviornment**
+1. Navigate to `~/ardupilot_gazebo/worlds`
+2. Run `gazebo --verbose iris_arducopter_runway.world`
+
+**Terminal 3: Command**
+This terminal is used for running the mission program 
+
+
+### Ubuntu 20.04 Setup (WIP)
