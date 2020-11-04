@@ -145,10 +145,10 @@ For Ubuntu 18.04 Environments, ROS Melodic is used. This README follows the Melo
 
 #### 1. ROS and Gazebo Install
 A bash script has been made to do the ROS Melodic and Gazebo setup:
-'''
+```
 wget https://raw.githubusercontent.com/PX4/Devguide/master/build_scripts/ubuntu_sim_ros_melodic.sh
 source ubuntu_sim_ros_melodic.sh
-'''
+```
 
 #### 2. Ardupilot and Ardupilot_Gazebo Repos Installation
 Before we can begin simulation, we must first make sure we have the correct repositories
@@ -159,7 +159,6 @@ downloaded and installed. Your directories should have the following setup follo
 	- ardupilot_gazebo (https://github.com/SwiftGust/ardupilot_gazebo)
 
 Follow the commands:
-
 ````
 cd
 git clone --recurse-submodules https://github.com/ArduPilot/ardupilot
@@ -174,7 +173,7 @@ make -j4
 sudo make install
 ````
 
-Copy & Paste Followings at the end of .bashrc file 
+Copy & Paste Followings at the end of .bashrc file (sudo gedit ~/.bashrc)
 ```
 source /usr/share/gazebo/setup.sh
 
@@ -209,6 +208,7 @@ sudo apt-get install python3 python3-pip git
 
 #### 4. Terminal Setup / Running the Simulations
 Open up 3 command terminals
+
 **Terminal 1: Starting the Arducopter Model**
 1. Navigate to `~/ardupilot/Tools/autotest`
 2. Run `sudo ./sim_vehicle.py -f gazebo-iris -v ArduCopter`
