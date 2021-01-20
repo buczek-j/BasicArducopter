@@ -1,5 +1,5 @@
 ### import libraries
-from dronekit import VehicleMode, connect
+from dronekit import VehicleMode, connect, LocationGlobal, LocationLocal
 from pymavlink import mavutil
 
 def waypoint_cmd_LLA(vehicle, lat, lon, alt, yaw=0):
@@ -135,11 +135,18 @@ def velocity_cmd_NED(vehicle, vNorth, vEast, vDown, angle=0):
 	# print('cmd ' + str(msg))
 	vehicle.send_mavlink(msg)
 
-# Function will land the vehicle at its current location or at the lat/lon coordinates provided (if non-zero) 
-# This is equivalent to setting the flght mode to LAND
-# The motors will not stop on their own: you must exit AUTO to cut the engines
+
 def land_vehicle(vehicle, yaw=0, lat=0, lon=0, alt=0):
-    msg = vehicle.message_factory.command_long_encode(
+	'''
+	Function will land the vehicle at its current location or at the lat/lon coordinates provided (if non-zero) 
+	This is equivalent to setting the flght mode to LAND
+	:param vehicle: Dronekit Vehicle class object
+	:param yaw: float for yaw angle (radians)
+	:param lat: float for the latitude (default 0 lands at current location)
+	:param lon: float fot the longitude (default 0 lands at current location)
+	:param alt: float for altitude in meters msl (default 0 lands at current location)
+	'''
+	msg = vehicle.message_factory.command_long_encode(
         0, 0, mavutil.mavlink.MAV_CMD_NAV_LAND, 0,
         0,  # param 1: Empty
         0,  # param 2: Empty
@@ -150,4 +157,14 @@ def land_vehicle(vehicle, yaw=0, lat=0, lon=0, alt=0):
         alt       # param 7: Alt
     )
     #print('cmd ' + str(msg))
-    vehicle.send_mavlink(msg)
+	vehicle.send_mavlink(msg)
+
+def set_home(vehicle, lat, lon, alt):
+	'''
+	Method to set the vehicle home location to the specified waypoint
+	:param vehicle: Dronekit Vehicle class object
+	:param lat: float for latitude
+	:param lon: float for longitude
+	:param alt: float for altitude in meters msl
+	'''
+	vehicle.home_location = LocationGlobal(lat,lon, alt)
