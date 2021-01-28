@@ -8,7 +8,7 @@ from MavLowLevel import *
 from CommonStructs import Frames, Waypoint
 
 class BasicArdu():
-    def __init__(self, frame=Frames.LLA, verbose=False, connection_string='tcp:127.0.0.1:5760', tolerance_location=2.0, global_home=None, ekf_offset=None):
+    def __init__(self, frame=Frames.LLA, verbose=False, connection_string='tcp:127.0.0.1:5760', tolerance_location=2.0, global_home=[42.47777625687639,-71.19357940183706,174.0], ekf_offset=None):
         '''
         Dronekit wrapper class for Ardupilot
         :param frame: vehicle coordinate frame
@@ -149,14 +149,14 @@ class BasicArdu():
             self.target_waypoint=None 
         else:
             if frame.value == Frames.LLA.value:
-                print('LLA')
+                print('LLA', x, y, z, phi)
                 self.target_waypoint = Waypoint(frame=Frames.LLA, x=x, y=y, z=z, compass_angle=phi)
                 waypoint_cmd_LLA(self.vehicle, x, y, z, phi)
             elif frame.value == Frames.NED.value:
-                print('NED')
+                print('NED', x, y, z, phi)
                 self.target_waypoint = Waypoint(frame=Frames.NED, x=x- self.ekf_origin_offset[0], y=y-self.ekf_origin_offset[1], z=z, compass_angle=phi)
                 waypoint_cmd_NED(self.vehicle, x - self.ekf_origin_offset[0], y - self.ekf_origin_offset[1], z, phi)
-            self.target_waypoint.print()
+            # self.target_waypoint.print()
 
     def handle_hold(self):
         '''
@@ -184,7 +184,7 @@ class BasicArdu():
             if self.target_waypoint.current_distance(self.vehicle) <= self.tolerance_location:
                 self.target_waypoint = None 
             else:
-                print("Drone location: ", self.vehicle.location.local_frame, "Target location: " ,self.target_waypoint.dNorth, self.target_waypoint.dEast, self.target_waypoint.dDown ,"Distance to target", self.target_waypoint.current_distance(self.vehicle))
+                # print("Drone location: ", self.vehicle.location.local_frame, "Target location: " ,self.target_waypoint.dNorth, self.target_waypoint.dEast, self.target_waypoint.dDown ,"Distance to target", self.target_waypoint.current_distance(self.vehicle))
                 return False
         
         else:               # if the drone has reached its target, then the target waypoint is set to None
