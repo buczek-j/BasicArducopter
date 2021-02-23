@@ -3,19 +3,17 @@ from CommonStructs import Frames
 from gpiozero import LED, Button
 from time import sleep
 
+'''
+Mission for drone to go to the specified waypoint and land, used to get the location on the ground 
+'''
 ALT = 5	# altitude in meters realative to home position
-WAYPOINTS = [[0.0, 0.0, -5.0], [100.0, 0.0, -5.0]] # [[meters north, meters east, meters down], [] ...]
-GPIO_OUT=26
-GPIO_IN=19
+WAYPOINTS = [[100.0, 0.0, -5.0, 0.0]] # [[meters north, meters east, meters down, delay in sec], [] ...]
 
 # Main Method
 def main():
     # simple use example
     print('---Starting Basic Drone---')
     drone  = BasicArdu(frame=Frames.NED, connection_string='/dev/ttyACM0')    # connect to drone
-    trigger_out = LED(GPIO_OUT)
-    trigger_in = Button(GPIO_IN)
-
 
     # takeoff drone
     drone.handle_takeoff(ALT)  # takeoff alititude: 5 meters
@@ -25,24 +23,10 @@ def main():
         # goto waypoint
         drone.handle_waypoint(Frames.NED, waypoint[0], waypoint[1], -1.0*abs(waypoint[2]), 0)    
         drone.wait_for_target()
-
         # ... Code to run at waypoint ...
-        print("- - Reached Waypoint - -")
-        trigger_out.on()	# trigger the WuR
-        sleep(2)
-        trigger_out.off()
-        while not trigger_in.is_pressed():	# Wait for WuR response
-            sleep(1)
-        print("- - WuR Trigger Recieved - -")
-
-
-
+        print("- - Reached Waypoint - -", waypoint)
+        sleep(waypoint[3])  # delay
     
-    # goto Home wayoint (starting position)
-    drone.handle_waypoint(Frames.NED, 0, 0, -5.0, 0)
-    drone.wait_for_target()
-    
-
     # land
     drone.handle_landing()
     
