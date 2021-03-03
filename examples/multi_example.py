@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from BasicArdu import BasicArdu
 from CommonStructs import Frames, Waypoint
 from time import sleep
