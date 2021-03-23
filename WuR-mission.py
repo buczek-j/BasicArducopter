@@ -1,5 +1,4 @@
-from BasicArdu import BasicArdu
-from CommonStructs import Frames
+from BasicArdu import BasicArdu, Frames
 
 from threading import Thread
 from time import sleep, time
@@ -31,10 +30,11 @@ class Serial_Logger():
         method to run in thread
         :param stop: Method returning true/false to stop the thread
         '''
-        while not stop:
-
-            sleep(1)
-            print(self.get_loc)
+        print("RUNNING THREAD",)
+        while not stop():
+            sleep(5)
+            print(self.get_loc())
+            self.writer.writerow(self.get_loc() + [time()]) # write row to csv file
             self.test_complete = True
 
             # TODO implement the serial reading
@@ -46,7 +46,7 @@ class Serial_Logger():
 def main():
     # simple use example
     print('---Starting Basic Drone---')
-    drone  = BasicArdu(frame=Frames.NED, connection_string="tcp:10.91.238.66:5762")# '/dev/ttyACM0')    # connect to drone
+    drone  = BasicArdu(frame=Frames.NED, connection_string='/dev/ttyACM0')    # connect to drone
     stop_threads = False
 
     def get_location():
@@ -55,6 +55,7 @@ def main():
         :return: array of format [Latitude, Longitude, Altitude (msl)] 
         '''
         return [drone.vehicle.location.global_frame.lat, drone.vehicle.location.global_frame.lon, drone.vehicle.location.global_frame.alt]
+
 
     serial_logger = Serial_Logger(get_location)
 
@@ -65,7 +66,7 @@ def main():
     # Start Logger Thread
     serial_thread = Thread(target=serial_logger.run, args=(lambda : stop_threads,))
     serial_thread.start()
-
+    sleep(0.1)
 
     for waypoint in WAYPOINTS:
         # goto waypoint
@@ -73,22 +74,23 @@ def main():
         drone.wait_for_target()
 
         print("- - Reached Waypoint - -")
-        while not serial_logger.test_complete:
+        serial_logger.test_complete = False
+        while serial_logger.test_complete == False:
             sleep(0.5)
             print('Waiting . . . ')
-
 
     # goto Home wayoint (starting position)
     drone.handle_waypoint(Frames.NED, 0, 0, -5.0, 0)
     drone.wait_for_target()
     
-
     # land
     drone.handle_landing()
 
     # Stop Threads
     stop_threads = True
+    
     serial_thread.join()
+    serial_logger.file.close()
     
 
 if __name__ == '__main__':
