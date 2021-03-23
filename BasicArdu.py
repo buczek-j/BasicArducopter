@@ -10,7 +10,7 @@ from MavLowLevel import *
 from CommonStructs import Frames, Waypoint
 
 class BasicArdu():
-    def __init__(self, frame=Frames.LLA, verbose=False, connection_string='tcp:127.0.0.1:5760', tolerance_location=2.0, global_home=[42.47777625687639,-71.19357940183706,174.0], ekf_offset=None):
+    def __init__(self, frame=Frames.LLA, verbose=False, connection_string='tcp:127.0.0.1:5760', tolerance_location=2.0, global_home=[42.47777625687639,-71.19357940183706,174.0], ekf_offset=None, max_movement_dist=50):
         '''
         Dronekit wrapper class for Ardupilot
         :param frame: vehicle coordinate frame
@@ -19,6 +19,7 @@ class BasicArdu():
         :param tolerance_location: float for tolerance for reaching waypoint (m)
         :param global_home: array of floats for the global origin of the drones [lat, lon, als (msl)]
         :param ekf_offset: array of floats for manually calculated ekf offset (meters) [dNorth, dEast]
+        :param max_movement_dist: float for the maximum distance between waypoints in meters
         '''
         # Vehicle Connection 
         while True:
@@ -42,6 +43,7 @@ class BasicArdu():
             if self.home_waypoint.current_distance(self.vehicle) >= tolerance_location:    # if ekf origin far from home lla, then approximate 
                 # this assumes that the drones are in the location at which they were turned on (better to manually specify ekf origin if possible)
                 self.ekf_origin_offset = self.home_waypoint.LLA_2_Coords(self.vehicle)
+                print(self.ekf_origin_offset)
             else:   # otherwise assume ekf origin is at lla home
                 self.ekf_origin_offset = [0,0]
         else:
@@ -64,6 +66,7 @@ class BasicArdu():
         self.tolerance_location = tolerance_location # minimum distance variance to waypoint (meters)
         self.target_waypoint = Waypoint(self.frame)                   # current target waypoint
         self.target_waypoint.update(self.vehicle)
+        self.max_movement_dist = max_movement_dist
 
         self.verbose = verbose
         # Set home location   
@@ -153,12 +156,24 @@ class BasicArdu():
             if frame.value == Frames.LLA.value:
                 print('LLA', x, y, z, phi)
                 self.target_waypoint = Waypoint(frame=Frames.LLA, x=x, y=y, z=z, compass_angle=phi)
-                waypoint_cmd_LLA(self.vehicle, x, y, z, phi)
+
+                
+                if self.target_waypoint.current_distance(self.vehicle) <= self.max_movement_dist:
+                    waypoint_cmd_LLA(self.vehicle, x, y, z, phi)
+                else:
+                    print('Cancelling Movement - Waypoint Too Far Away')
+                    self.target_waypoint = None
+
+
             elif frame.value == Frames.NED.value:
                 print('NED', x, y, z, phi)
                 self.target_waypoint = Waypoint(frame=Frames.NED, x=x- self.ekf_origin_offset[0], y=y-self.ekf_origin_offset[1], z=z, compass_angle=phi)
-                waypoint_cmd_NED(self.vehicle, x - self.ekf_origin_offset[0], y - self.ekf_origin_offset[1], z, phi)
-            # self.target_waypoint.print()
+                
+                if self.target_waypoint.current_distance(self.vehicle) <= self.max_movement_dist:
+                    waypoint_cmd_NED(self.vehicle, x - self.ekf_origin_offset[0], y - self.ekf_origin_offset[1], z, phi)
+                else:
+                    print('Cancelling Movement - Waypoint Too Far Away')
+                    self.target_waypoint = None
 
     def handle_hold(self):
         '''
