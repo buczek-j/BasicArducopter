@@ -32,8 +32,11 @@ class BasicArdu():
         while not self.vehicle.is_armable:
             print(" Waiting for vehicle to initialise...")
             sleep(2)
-            
-        self.home_waypoint = Waypoint(Frames.LLA, global_home[0], global_home[1], global_home[2])
+        
+        if global_home==None:
+            self.home_waypoint = Waypoint(Frames.LLA).update(self.vehicle)
+        else:
+            self.home_waypoint = Waypoint(Frames.LLA, global_home[0], global_home[1], global_home[2])
 
         # Set EKF Origin Offset
         if ekf_offset == None:  # If ekf origin not set
