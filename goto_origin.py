@@ -13,7 +13,7 @@ WAYPOINTS = [[100.0, 0.0, -5.0, 0.0]] # [[meters north, meters east, meters down
 def main():
     # simple use example
     print('---Starting Basic Drone---')
-    drone  = BasicArdu(frame=Frames.NED, connection_string='/dev/ttyACM0')    # connect to drone
+    drone  = BasicArdu(frame=Frames.NED, connection_string='/dev/ttyACM0', global_home=None)    # connect to drone
 
     # takeoff drone
     drone.handle_takeoff(ALT)  # takeoff alititude: 5 meters
