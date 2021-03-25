@@ -28,7 +28,7 @@ class Serial_Logger():
         '''
         print("RUNNING THREAD",)
         self.loop = True
-        self.process = subprocess.Popen( 'java ~/Documents/tinyos-main/tools/tinyos/java/net.tinyos.tools.PrintfClient -comm serial@/dev/ttyUSB0:telosb' , shell = True , stdout = subprocess.PIPE )
+        self.process = subprocess.Popen( 'java net.tinyos.tools.PrintfClient -comm serial@/dev/ttyUSB0:telosb' , shell = True , stdout = subprocess.PIPE )
         
         while stop() == False and self.loop==True:   # TODO setup path
             output = self.process.stdout.readline().decode()
