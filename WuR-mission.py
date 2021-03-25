@@ -3,7 +3,7 @@ from BasicArdu import BasicArdu, Frames
 import subprocess
 from threading import Thread
 from time import sleep, time
-import csv, io
+import csv, io, serial
 
 ALT = 5	# altitude in meters realative to home position
 WAYPOINTS = [[0.0, 0.0, -5.0], [10.0, 0.0, -5.0]] # [[meters north, meters east, meters down], [] ...]
@@ -97,33 +97,37 @@ def main():
     drone.wait_for_target()   # wait to reach desired location
 
     # Start Logger Thread
-    serial_thread = Thread(target=serial_logger.run, args=(lambda : stop_threads,))
-    serial_thread.start()
-    sleep(0.1)
+    try:
+        serial_thread = Thread(target=serial_logger.run, args=(lambda : stop_threads,))
+        serial_thread.start()
+        sleep(0.1)
 
-    for waypoint in WAYPOINTS:
-        # goto waypoint
-        drone.handle_waypoint(Frames.NED, waypoint[0], waypoint[1], -1.0*abs(waypoint[2]), 0)    
+        for waypoint in WAYPOINTS:
+            # goto waypoint
+            drone.handle_waypoint(Frames.NED, waypoint[0], waypoint[1], -1.0*abs(waypoint[2]), 0)    
+            drone.wait_for_target()
+
+            print("- - Reached Waypoint - -")
+            serial_logger.test_complete = False
+            while serial_logger.test_complete == False:
+                sleep(0.5)
+                print('Waiting . . . ')
+
+        
+        
+    finally:
+        # goto Home wayoint (starting position)
+        drone.handle_waypoint(Frames.NED, 0, 0, -5.0, 0)
         drone.wait_for_target()
+        
+        # land
+        drone.handle_landing()
 
-        print("- - Reached Waypoint - -")
-        serial_logger.test_complete = False
-        while serial_logger.test_complete == False:
-            sleep(0.5)
-            print('Waiting . . . ')
-
-    # goto Home wayoint (starting position)
-    drone.handle_waypoint(Frames.NED, 0, 0, -5.0, 0)
-    drone.wait_for_target()
-    
-    # land
-    drone.handle_landing()
-
-    # Stop Threads
-    stop_threads = True
-    
-    serial_logger.file.close()
-    serial_thread.join()
+        # Stop Threads
+        stop_threads = True
+        
+        serial_logger.file.close()
+        serial_thread.join()
     
     
 
