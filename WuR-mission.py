@@ -29,7 +29,7 @@ class Serial_Logger():
         print("RUNNING THREAD",)
         self.loop = True
         # self.process = subprocess.Popen( 'java net.tinyos.tools.PrintfClient -comm serial@/dev/ttyUSB0:telosb' , shell = True , stdout = subprocess.PIPE )
-        ser = io.BufferedReader( serial.Serial( '/dev/ttyUSB0' , baudrate = 115200 , parity = serial.PARITY_NONE , stopbits = serial.STOPBITS_ONE, bytesize = serial.EIGHTBITS , timeout = 0 ) , encoding= 'latin-1' )
+        ser = io.TextIOWrapper( io.BufferedReader( serial.Serial( '/dev/ttyUSB0' , baudrate = 115200 , parity = serial.PARITY_NONE , stopbits = serial.STOPBITS_ONE, bytesize = serial.EIGHTBITS , timeout = 0 ) ) , encoding= 'latin-1' )
         
         line_buffer= b''
         while stop() == False and self.loop==True:   # TODO setup path
