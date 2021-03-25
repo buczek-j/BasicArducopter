@@ -58,7 +58,7 @@ def main():
         Method to return the location of the drone (LLA)
         :return:string of Lat,Lon,Alt,time,meters_north,meters_east,meters_down
         '''
-        return str(drone.vehicle.location.global_frame.lat) +', '+ str(drone.vehicle.location.global_frame.lon)+', '+ str(drone.vehicle.location.global_frame.alt) +', '+ + str(time()) + +', '+ str(drone.vehicle.location.local_frame.north) + ', '+str(drone.vehicle.location.local_frame.east)+ ', ' +str(drone.vehicle.location.local_frame.down))
+        return str(drone.vehicle.location.global_frame.lat) +', '+ str(drone.vehicle.location.global_frame.lon)+', '+ str(drone.vehicle.location.global_frame.alt) +', '+ + str(time()) + +', '+ str(drone.vehicle.location.local_frame.north) + ', '+str(drone.vehicle.location.local_frame.east)+ ', ' +str(drone.vehicle.location.local_frame.down)
 
 
     serial_logger = Serial_Logger(get_location)
