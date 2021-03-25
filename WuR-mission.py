@@ -31,33 +31,26 @@ class Serial_Logger():
         # self.process = subprocess.Popen( 'java net.tinyos.tools.PrintfClient -comm serial@/dev/ttyUSB0:telosb' , shell = True , stdout = subprocess.PIPE )
         ser = io.TextIOWrapper( io.BufferedReader( serial.Serial( '/dev/ttyUSB0' , baudrate = 115200 , parity = serial.PARITY_NONE , stopbits = serial.STOPBITS_ONE, bytesize = serial.EIGHTBITS , timeout = 0 ) ) , encoding= 'latin-1' )
         
-        line_buffer= b''
+        #line_buffer= b''
         while stop() == False and self.loop==True:   # TODO setup path
 
-            line_in = ser.readline()
+            text_in = ser.readline()
             ser.flush()
 
-            if len( line_in ) > 0:
-                line_buffer += line_in
+            #if len( line_in ) > 0:
+            #    line_buffer += line_in
 
-            if line_buffer.count( b'~' ) >= 2:
-                try:
-                    start_index = line_buffer.index( b'\x00d' ) + len( b'\x00d' )
-                    line_buffer = line_buffer[ start_index: ]
-                    end_index = line_buffer.index( b'\x00' )
-                    line_out = line_buffer[ :end_index ]
-
-                    line_buffer = line_buffer[ end_index: ]
-
-                    text_in = line_out.decode( 'latin1' )
-                    print( text_in , flush = True )
-                    if 'Control received!' in text_in:
-                        self.loop = False
-                    if 'Ping #6' in line_in:
-                        self.test_complete = True
-                        self.file.write( self.get_loc() + '\n' )
-                except:
-                        pass
+            #if line_buffer.count( b'~' ) >= 2:
+            try:
+                #print( text_in[ -1 ] , flush = True )
+                self.file.write( text_in + '\n' )
+                if 'Control received!' in text_in:
+                    self.loop = False
+                if 'Ping #6' in line_in:
+                    self.test_complete = True
+                    self.file.write( self.get_loc() + '\n' )
+            except:
+                    pass
 
 
             # output = self.process.stdout.readline().decode()
@@ -119,7 +112,7 @@ def main():
         # goto Home wayoint (starting position)
         drone.handle_waypoint(Frames.NED, 0, 0, -5.0, 0)
         drone.wait_for_target()
-        
+
         # land
         drone.handle_landing()
 
