@@ -46,7 +46,7 @@ class Serial_Logger():
 def main():
     # simple use example
     print('---Starting Basic Drone---')
-    drone  = BasicArdu(frame=Frames.NED, connection_string='/dev/ttyACM0')    # connect to drone
+    drone  = BasicArdu(frame=Frames.NED, connection_string='tcp:192.168.10.2:5762', global_home=None)    # connect to drone  '/dev/ttyACM0'
     stop_threads = False
 
     def get_location():
