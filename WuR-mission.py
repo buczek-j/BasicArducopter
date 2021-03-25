@@ -33,7 +33,7 @@ class Serial_Logger():
         while stop() == False and self.loop==True:   # TODO setup path
             output = self.process.stdout.readline().decode()
             if self.process.poll() is not None and output == '':
-			    self.loop = False
+                self.loop = False
 
             if output:
                 self.file.write( output.strip() + '\n' )
