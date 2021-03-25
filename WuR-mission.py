@@ -1,5 +1,6 @@
 from BasicArdu import BasicArdu, Frames
 
+import subprocess
 from threading import Thread
 from time import sleep, time
 import csv
@@ -14,16 +15,11 @@ class Serial_Logger():
         method to initialize the Serial logger object
         :param get_loc: Method to get the location of the drone
         '''
-        row_list = ["Lat", "Lon", "ALT", "Time", ""]            # CSV Header
-        self.csv_name = "Logs/DATA_" + str(round(time())) + '.csv'
-        self.file = open(self.csv_name, 'a', newline='')
-        self.writer = csv.writer(self.file)
-        self.writer.writerow(row_list)                          # Write header
+        self.file = open( 'data.txt' , 'a' )
 
         self.get_loc = get_loc
         self.test_complete = False                              # Bool to goto next waypoint
 
-        # TODO Initialize serial connection to Magonode
 
     def run(self, stop):
         '''
@@ -31,13 +27,21 @@ class Serial_Logger():
         :param stop: Method returning true/false to stop the thread
         '''
         print("RUNNING THREAD",)
-        while not stop():
-            sleep(5)
-            print(self.get_loc())
-            self.writer.writerow(self.get_loc() + [time()]) # write row to csv file
-            self.test_complete = True
+        self.loop = True
+        self.process = subprocess.Popen( 'java ~/Documents/tinyos-main/tools/tinyos/java/net.tinyos.tools.PrintfClient -comm serial@/dev/ttyUSB0:telosb' , shell = True , stdout = subprocess.PIPE )
+        
+        while stop() == False and self.loop==True:   # TODO setup path
+            output = self.process.stdout.readline().decode()
+            if self.process.poll() is not None and output == '':
+			    self.loop = False
 
-            # TODO implement the serial reading
+            if output:
+                self.file.write( output.strip() + '\n' )
+                
+                if 'Ping #6'in output:
+                    self.test_complete = True
+                    self.file.write( self.get_loc() + '\n' )
+            
 
         print('Thread Stopped')
 
@@ -52,9 +56,9 @@ def main():
     def get_location():
         '''
         Method to return the location of the drone (LLA)
-        :return: array of format [Latitude, Longitude, Altitude (msl)] 
+        :return:string of Lat,Lon,Alt,time,meters_north,meters_east,meters_down
         '''
-        return [drone.vehicle.location.global_frame.lat, drone.vehicle.location.global_frame.lon, drone.vehicle.location.global_frame.alt]
+        return str(drone.vehicle.location.global_frame.lat) +', '+ str(drone.vehicle.location.global_frame.lon)+', '+ str(drone.vehicle.location.global_frame.alt) +', '+ + str(time()) + +', '+ str(drone.vehicle.location.local_frame.north) + ', '+str(drone.vehicle.location.local_frame.east)+ ', ' +str(drone.vehicle.location.local_frame.down))
 
 
     serial_logger = Serial_Logger(get_location)
@@ -89,8 +93,9 @@ def main():
     # Stop Threads
     stop_threads = True
     
-    serial_thread.join()
     serial_logger.file.close()
+    serial_thread.join()
+    
     
 
 if __name__ == '__main__':
