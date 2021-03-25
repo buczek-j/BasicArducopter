@@ -42,7 +42,7 @@ class Serial_Logger():
 
             #if line_buffer.count( b'~' ) >= 2:
             try:
-                #print( text_in[ -1 ] , flush = True )
+                print( text_in[ -1 ] , flush = True )
                 self.file.write( text_in + '\n' )
                 if 'Control received!' in text_in:
                     self.loop = False
