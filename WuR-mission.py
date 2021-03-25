@@ -3,7 +3,7 @@ from BasicArdu import BasicArdu, Frames
 import subprocess
 from threading import Thread
 from time import sleep, time
-import csv
+import csv, io
 
 ALT = 5	# altitude in meters realative to home position
 WAYPOINTS = [[0.0, 0.0, -5.0], [10.0, 0.0, -5.0]] # [[meters north, meters east, meters down], [] ...]
@@ -28,19 +28,48 @@ class Serial_Logger():
         '''
         print("RUNNING THREAD",)
         self.loop = True
-        self.process = subprocess.Popen( 'java net.tinyos.tools.PrintfClient -comm serial@/dev/ttyUSB0:telosb' , shell = True , stdout = subprocess.PIPE )
+        # self.process = subprocess.Popen( 'java net.tinyos.tools.PrintfClient -comm serial@/dev/ttyUSB0:telosb' , shell = True , stdout = subprocess.PIPE )
+        ser = io.BufferedReader( serial.Serial( '/dev/ttyUSB0' , baudrate = 115200 , parity = serial.PARITY_NONE , stopbits = serial.STOPBITS_ONE, bytesize = serial.EIGHTBITS , timeout = 0 ) , encoding= 'latin-1' )
         
+        line_buffer= b''
         while stop() == False and self.loop==True:   # TODO setup path
-            output = self.process.stdout.readline().decode()
-            if self.process.poll() is not None and output == '':
-                self.loop = False
 
-            if output:
-                self.file.write( output.strip() + '\n' )
+            line_in = ser.readline()
+            ser.flush()
+
+            if len( line_in ) > 0:
+                line_buffer += line_in
+
+            if line_buffer.count( b'~' ) >= 2:
+                try:
+                    start_index = line_buffer.index( b'\x00d' ) + len( b'\x00d' )
+                    line_buffer = line_buffer[ start_index: ]
+                    end_index = line_buffer.index( b'\x00' )
+                    line_out = line_buffer[ :end_index ]
+
+                    line_buffer = line_buffer[ end_index: ]
+
+                    text_in = line_out.decode( 'latin1' )
+                    print( text_in , flush = True )
+                    if 'Control received!' in text_in:
+                        self.loop = False
+                    if 'Ping #6' in line_in:
+                        self.test_complete = True
+                        self.file.write( self.get_loc() + '\n' )
+                except:
+                        pass
+
+
+            # output = self.process.stdout.readline().decode()
+            # if self.process.poll() is not None and output == '':
+            #     self.loop = False
+
+            # if output:
+            #     self.file.write( output.strip() + '\n' )
                 
-                if 'Ping #6'in output:
-                    self.test_complete = True
-                    self.file.write( self.get_loc() + '\n' )
+            #     if 'Ping #6'in output:
+            #         self.test_complete = True
+            #         self.file.write( self.get_loc() + '\n' )
             
 
         print('Thread Stopped')
