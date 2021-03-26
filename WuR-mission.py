@@ -144,7 +144,7 @@ def main():
 
         for waypoint in WAYPOINTS:
             # goto waypoint
-            drone.handle_waypoint(Frames.NED, waypoint[0], waypoint[1], -1.0*abs(waypoint[2]), 0)    
+            drone.handle_waypoint(Frames.NED, waypoint[0], waypoint[1], -1.0*abs(ALT), 0)    
             drone.wait_for_target()
 
             print("- - Reached Waypoint - -")
