@@ -22,7 +22,7 @@ class Serial_Logger():
         print( '\tSerial port name: ' , serial_port_name , flush = True )
         print( '\tStream type: ' , stream_type , flush = True )
         
-        self.file = open( filename + str(datetime.now()).replace(':','-') +'.txt' , 'a' )
+        self.file = open( filename + str(datetime.now()).replace(':','-').replace(' ', '_') +'.txt' , 'a' )
         self.mote_is_sniffer= mote_is_sniffer
         self.serial_port_name = serial_port_name
         self.stream_type = stream_type
