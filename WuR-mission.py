@@ -11,7 +11,7 @@ WAYPOINTS = [[0.0, 0.0], [10.0, 0.0], [20.0, 0.0], [30.0, 0.0], [40.0, 0.0], [50
 
 
 class Serial_Logger():
-    def __init__(self, get_loc,filename='data', mote_is_sniffer = False , serial_port_name = '/dev/ttyUSB0' , stream_type = 'text'):
+    def __init__(self, get_loc,filename='Logs/data', mote_is_sniffer = False , serial_port_name = '/dev/ttyUSB0' , stream_type = 'text'):
         '''
         method to initialize the Serial logger object
         :param get_loc: Method to get the location of the drone
