@@ -58,8 +58,6 @@ class Serial_Logger():
                         else:
                             text_buffer += text_in
                         
-                
-
                 if r'\n' in text_buffer:
                     #print( text_buffer[ :text_buffer.index( r'\n' ) ] , flush = True )
                     self.file.write( text_buffer[ :text_buffer.index( r'\n' ) ] + '\n' )
@@ -83,7 +81,7 @@ class Serial_Logger():
 
                     if len( text_out ) > 28:
 
-                        #print( text_out[ :28 ] + text_out[ 41: ] , flush = True )
+                        print( text_out[ :28 ] + text_out[ 41: ] , flush = True )
                         self.file.write( text_out[ :28 ] + text_out[ 41: ] + '\n' )
 
                     else:
@@ -111,7 +109,6 @@ class Serial_Logger():
                     self.file.write( text_buffer.strip() + '\n' )
 
         else:
-
             print( 'Error: the stream type has to be one of the following:' , flush = True )
             print( '\tbytes' , flush = True )
             print( '\ttext' , flush = True )
