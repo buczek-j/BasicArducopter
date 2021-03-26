@@ -10,7 +10,7 @@ WAYPOINTS = [[0.0, 0.0, -5.0], [10.0, 0.0, -5.0]] # [[meters north, meters east,
 
 
 class Serial_Logger():
-    def __init__(self, get_loc,filename='data.txt', mote_is_sniffer = False , serial_port_name = '/dev/ttyUSB0' , stream_type = 'text'):
+    def __init__(self, get_loc,filename='data', mote_is_sniffer = False , serial_port_name = '/dev/ttyUSB0' , stream_type = 'text'):
         '''
         method to initialize the Serial logger object
         :param get_loc: Method to get the location of the drone
@@ -21,7 +21,7 @@ class Serial_Logger():
         print( '\tSerial port name: ' , serial_port_name , flush = True )
         print( '\tStream type: ' , stream_type , flush = True )
         
-        self.file = open( filename , 'a' )
+        self.file = open( filename + str(time())+'.txt' , 'a' )
         self.mote_is_sniffer= mote_is_sniffer
         self.serial_port_name = serial_port_name
         self.stream_type = stream_type
@@ -85,12 +85,12 @@ class Serial_Logger():
                         self.file.write( text_out[ :28 ] + text_out[ 41: ] + '\n' )
 
                     else:
-                        #print( text_out , flush = True )
+                        print( text_out , flush = True )
                         self.file.write( text_out + '\n' )
 
                     text_buffer = text_buffer[ ( text_buffer.index( '\n' ) + len( '\n' ) ): ]
-                if "RO ended." in text_buffer:
-                    self.test_complete = True
+                    if "RO ended." in text_out:
+                        self.test_complete = True
 
         elif self.stream_type == 'java':
             process = subprocess.Popen( 'java net.tinyos.tools.PrintfClient -comm serial@' + self.serial_port_name + ( ':telosb' if not self.mote_is_sniffer else ':57600' ) , shell = True , stdout = subprocess.PIPE )
@@ -152,6 +152,7 @@ def main():
             while serial_logger.test_complete == False:
                 sleep(0.5)
                 print('Waiting . . . ')
+        serial_logger.file.write(get_location())
 
     except Exception as e:
         print(e)
