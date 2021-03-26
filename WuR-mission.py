@@ -10,12 +10,21 @@ WAYPOINTS = [[0.0, 0.0, -5.0], [10.0, 0.0, -5.0]] # [[meters north, meters east,
 
 
 class Serial_Logger():
-    def __init__(self, get_loc):
+    def __init__(self, get_loc,filename='data.txt', mote_is_sniffer = False , serial_port_name = '/dev/ttyUSB0' , stream_type = 'text'):
         '''
         method to initialize the Serial logger object
         :param get_loc: Method to get the location of the drone
         '''
-        self.file = open( 'data.txt' , 'a' )
+        print( 'SerialSaver started.' , flush = True )
+        print( '\tFilename: ' , filename , flush = True )
+        print( '\tMote is sniffer?: ' , mote_is_sniffer , flush = True )
+        print( '\tSerial port name: ' , serial_port_name , flush = True )
+        print( '\tStream type: ' , stream_type , flush = True )
+        
+        self.file = open( filename , 'a' )
+        self.mote_is_sniffer= mote_is_sniffer
+        self.serial_port_name = serial_port_name
+        self.stream_type = stream_type
 
         self.get_loc = get_loc
         self.test_complete = False                              # Bool to goto next waypoint
@@ -27,45 +36,95 @@ class Serial_Logger():
         :param stop: Method returning true/false to stop the thread
         '''
         print("RUNNING THREAD",)
-        self.loop = True
-        # self.process = subprocess.Popen( 'java net.tinyos.tools.PrintfClient -comm serial@/dev/ttyUSB0:telosb' , shell = True , stdout = subprocess.PIPE )
-        ser = io.TextIOWrapper( io.BufferedReader( serial.Serial( '/dev/ttyUSB0' , baudrate = 115200 , parity = serial.PARITY_NONE , stopbits = serial.STOPBITS_ONE, bytesize = serial.EIGHTBITS , timeout = 0 ) ) , encoding= 'latin-1' )
+        loop = True
+
+
+        text_buffer = str()
         
-        #line_buffer= b''
-        while stop() == False and self.loop==True:   # TODO setup path
+        if self.stream_type == 'bytes':
 
-            text_in = ser.readline()
-            ser.flush()
+            ser = serial.Serial( self.serial_port_name , baudrate = 115200 if not self.mote_is_sniffer else 57600 , timeout = 0 )
 
-            #if len( line_in ) > 0:
-            #    line_buffer += line_in
+            loop = True
+            while stop() == False and loop==True:
 
-            #if line_buffer.count( b'~' ) >= 2:
-            try:
-                print( text_in[ -1 ] , flush = True )
-                self.file.write( text_in + '\n' )
-                if 'Control received!' in text_in:
-                    self.loop = False
-                if 'Ping #6' in line_in:
-                    self.test_complete = True
-                    self.file.write( self.get_loc() + '\n' )
-            except:
-                    pass
+                bytes_in = ser.read( ser.inWaiting() )
 
+                if len( bytes_in ) > 0:
 
-            # output = self.process.stdout.readline().decode()
-            # if self.process.poll() is not None and output == '':
-            #     self.loop = False
+                    text_in = str( bytes_in )[ 2:-1 ]
 
-            # if output:
-            #     self.file.write( output.strip() + '\n' )
+                    while r'\x00d' in text_in:
+
+                        text_in = text_in[ ( text_in.index( r'\x00d' ) + len( r'\x00d' ) ): ]
+
+                        if r'\x' in text_in:
+
+                            text_buffer += text_in[ :text_in.index( r'\x' ) ]
+
+                        else:
+
+                            text_buffer += text_in
+
+                if r'\n' in text_buffer:
+                    #print( text_buffer[ :text_buffer.index( r'\n' ) ] , flush = True )
+                    self.file.write( text_buffer[ :text_buffer.index( r'\n' ) ] + '\n' )
+                    text_buffer = text_buffer[ ( text_buffer.index( r'\n' ) + len( r'\n' ) ): ]
+
+        elif self.stream_type == 'text':
+
+            ser = serial.Serial( self.serial_port_name , baudrate = 115200 if not self.mote_is_sniffer else 57600 , timeout = 0 )
+            sio = io.TextIOWrapper( io.BufferedReader( ser ) , encoding = 'latin-1' )
+
+            loop = True
+            while stop() == False and loop==True:
+
+                text_in = sio.readline()
+
+                if len( text_in ) > 0:
+
+                    text_buffer += text_in
+
+                if '\x00d' in text_buffer and '\n' in text_buffer:
+
+                    text_out = text_buffer[ ( text_buffer.index( '\x00d' ) + len( '\x00d' ) ):text_buffer.index( '\n' ) ]
+
+                    if len( text_out ) > 28:
+
+                        #print( text_out[ :28 ] + text_out[ 41: ] , flush = True )
+                        self.file.write( text_out[ :28 ] + text_out[ 41: ] + '\n' )
+
+                    else:
+
+                        #print( text_out , flush = True )
+                        self.file.write( text_out + '\n' )
+
+                    text_buffer = text_buffer[ ( text_buffer.index( '\n' ) + len( '\n' ) ): ]
+
+        elif self.stream_type == 'java':
+
+            process = subprocess.Popen( 'java net.tinyos.tools.PrintfClient -comm serial@' + self.serial_port_name + ( ':telosb' if not self.mote_is_sniffer else ':57600' ) , shell = True , stdout = subprocess.PIPE )
+
+            loop = True
+            while stop() == False and loop==True:
                 
-            #     if 'Ping #6'in output:
-            #         self.test_complete = True
-            #         self.file.write( self.get_loc() + '\n' )
-            
+                text_buffer = process.stdout.readline().decode()
+                
+                if process.poll() is not None and text_buffer == '':
+                    
+                    loop = False
+                    
+                if text_buffer:
+                    
+                    #print( text_buffer.strip() , flush = True )
+                    self.file.write( text_buffer.strip() + '\n' )
 
-        print('Thread Stopped')
+        else:
+
+            print( 'Error: the stream type has to be one of the following:' , flush = True )
+            print( '\tbytes' , flush = True )
+            print( '\ttext' , flush = True )
+            print( '\tjava' , flush = True )
 
 
 # Main Method
@@ -106,11 +165,12 @@ def main():
                 sleep(0.5)
                 print('Waiting . . . ')
 
-        
-        
+    except Exception as e:
+        print(e)
+
     finally:
         # goto Home wayoint (starting position)
-        drone.handle_waypoint(Frames.NED, 0, 0, -5.0, 0)
+        drone.handle_waypoint(Frames.NED, 0, 1, -5.0, 0)
         drone.wait_for_target()
 
         # land
