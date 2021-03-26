@@ -3,7 +3,7 @@ from BasicArdu import BasicArdu, Frames
 import subprocess
 from threading import Thread
 from time import sleep, time
-import csv, io, serial
+import csv, io, serial, os, sys
 
 ALT = 5	# altitude in meters realative to home position
 WAYPOINTS = [[0.0, 0.0], [10.0, 0.0], [20.0, 0.0], [30.0, 0.0], [40.0, 0.0], [50.0, 0.0], [60.0, 0.0], [70.0, 0.0], [80.0, 0.0], [90.0, 0.0], [100.0, 0.0], [110.0, 0.0], [120.0, 0.0], [130.0, 0.0], [140.0, 0.0], [150.0, 0.0]] # [[meters north, meters east, meters down], [] ...]
@@ -155,7 +155,9 @@ def main():
             serial_logger.file.write(get_location())
 
     except Exception as e:
-        print(e)
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(exc_type, fname, exc_tb.tb_lineno)
 
     finally:
         # goto Home wayoint (starting position)
