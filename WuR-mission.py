@@ -38,33 +38,28 @@ class Serial_Logger():
         print("RUNNING THREAD",)
         loop = True
 
-
         text_buffer = str()
         
         if self.stream_type == 'bytes':
-
             ser = serial.Serial( self.serial_port_name , baudrate = 115200 if not self.mote_is_sniffer else 57600 , timeout = 0 )
 
-            loop = True
             while stop() == False and loop==True:
-
                 bytes_in = ser.read( ser.inWaiting() )
 
                 if len( bytes_in ) > 0:
-
                     text_in = str( bytes_in )[ 2:-1 ]
 
                     while r'\x00d' in text_in:
-
                         text_in = text_in[ ( text_in.index( r'\x00d' ) + len( r'\x00d' ) ): ]
 
                         if r'\x' in text_in:
-
                             text_buffer += text_in[ :text_in.index( r'\x' ) ]
 
                         else:
-
                             text_buffer += text_in
+                        
+                        if "Ping #6" in text_buffer:
+                            self.test_complete = True
 
                 if r'\n' in text_buffer:
                     #print( text_buffer[ :text_buffer.index( r'\n' ) ] , flush = True )
@@ -72,21 +67,16 @@ class Serial_Logger():
                     text_buffer = text_buffer[ ( text_buffer.index( r'\n' ) + len( r'\n' ) ): ]
 
         elif self.stream_type == 'text':
-
             ser = serial.Serial( self.serial_port_name , baudrate = 115200 if not self.mote_is_sniffer else 57600 , timeout = 0 )
             sio = io.TextIOWrapper( io.BufferedReader( ser ) , encoding = 'latin-1' )
 
-            loop = True
             while stop() == False and loop==True:
-
                 text_in = sio.readline()
 
                 if len( text_in ) > 0:
-
                     text_buffer += text_in
 
                 if '\x00d' in text_buffer and '\n' in text_buffer:
-
                     text_out = text_buffer[ ( text_buffer.index( '\x00d' ) + len( '\x00d' ) ):text_buffer.index( '\n' ) ]
 
                     if len( text_out ) > 28:
@@ -95,27 +85,26 @@ class Serial_Logger():
                         self.file.write( text_out[ :28 ] + text_out[ 41: ] + '\n' )
 
                     else:
-
                         #print( text_out , flush = True )
                         self.file.write( text_out + '\n' )
 
                     text_buffer = text_buffer[ ( text_buffer.index( '\n' ) + len( '\n' ) ): ]
+                    if "Ping #6" in text_buffer:
+                        self.test_complete = True
 
         elif self.stream_type == 'java':
-
             process = subprocess.Popen( 'java net.tinyos.tools.PrintfClient -comm serial@' + self.serial_port_name + ( ':telosb' if not self.mote_is_sniffer else ':57600' ) , shell = True , stdout = subprocess.PIPE )
 
-            loop = True
             while stop() == False and loop==True:
-                
                 text_buffer = process.stdout.readline().decode()
                 
                 if process.poll() is not None and text_buffer == '':
-                    
                     loop = False
+                
+                if "Ping #6" in text_buffer:
+                    self.test_complete = True
                     
                 if text_buffer:
-                    
                     #print( text_buffer.strip() , flush = True )
                     self.file.write( text_buffer.strip() + '\n' )
 
