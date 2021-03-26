@@ -6,7 +6,7 @@ from time import sleep, time
 import csv, io, serial
 
 ALT = 5	# altitude in meters realative to home position
-WAYPOINTS = [[0.0, 0.0, -5.0], [10.0, 0.0, -5.0]] # [[meters north, meters east, meters down], [] ...]
+WAYPOINTS = [[0.0, 0.0], [10.0, 0.0], [20.0, 0.0], [30.0, 0.0], [40.0, 0.0], [50.0, 0.0], [60.0, 0.0], [70.0, 0.0], [80.0, 0.0], [90.0, 0.0], [100.0, 0.0], [110.0, 0.0], [120.0, 0.0], [130.0, 0.0], [140.0, 0.0], [150.0, 0.0]] # [[meters north, meters east, meters down], [] ...]
 
 
 class Serial_Logger():
@@ -81,11 +81,11 @@ class Serial_Logger():
 
                     if len( text_out ) > 28:
 
-                        print( text_out[ :28 ] + text_out[ 41: ] , flush = True )
+                        # print( text_out[ :28 ] + text_out[ 41: ] , flush = True )
                         self.file.write( text_out[ :28 ] + text_out[ 41: ] + '\n' )
 
                     else:
-                        print( text_out , flush = True )
+                        # print( text_out , flush = True )
                         self.file.write( text_out + '\n' )
 
                     text_buffer = text_buffer[ ( text_buffer.index( '\n' ) + len( '\n' ) ): ]
@@ -152,7 +152,7 @@ def main():
             while serial_logger.test_complete == False:
                 sleep(0.5)
                 print('Waiting . . . ')
-        serial_logger.file.write(get_location())
+            serial_logger.file.write(get_location())
 
     except Exception as e:
         print(e)
