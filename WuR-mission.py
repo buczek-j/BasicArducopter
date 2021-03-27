@@ -7,7 +7,7 @@ from datetime import datetime
 import csv, io, serial, os, sys
 
 ALT = 5	# altitude in meters realative to home position
-WAYPOINTS = [[0.0, 0.0], [10.0, 0.0], [20.0, 0.0], [30.0, 0.0], [40.0, 0.0], [50.0, 0.0], [60.0, 0.0], [70.0, 0.0], [80.0, 0.0], [90.0, 0.0], [100.0, 0.0], [110.0, 0.0], [120.0, 0.0], [130.0, 0.0], [140.0, 0.0], [150.0, 0.0]] # [[meters north, meters east, meters down], [] ...]
+WAYPOINTS = [[10.0, 0.0], [20.0, 0.0], [30.0, 0.0], [40.0, 0.0], [50.0, 0.0], [60.0, 0.0], [70.0, 0.0], [80.0, 0.0], [90.0, 0.0], [100.0, 0.0], [110.0, 0.0], [120.0, 0.0], [130.0, 0.0], [140.0, 0.0], [150.0, 0.0]] # [[meters north, meters east, meters down], [] ...]
 
 
 class Serial_Logger():
@@ -145,7 +145,7 @@ def main():
 
         for waypoint in WAYPOINTS:
             # goto waypoint
-            drone.handle_waypoint(Frames.NED, waypoint[0], waypoint[1], -1.0*abs(ALT), 0)    
+            drone.handle_waypoint(Frames.NED, waypoint[1], waypoint[0], -1.0*abs(ALT), 0)    
             drone.wait_for_target()
 
             print("- - Reached Waypoint - -")
