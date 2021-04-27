@@ -6,8 +6,8 @@ Basic Dronekit Wrapper for ArduPilot controller
 
 from time import sleep
 from math import pi
-from MavLowLevel import *
-from CommonStructs import Frames, Waypoint
+from BasicArducopter.MavLowLevel import *
+from BasicArducopter.CommonStructs import Frames, Waypoint
 
 class BasicArdu():
     def __init__(self, frame=Frames.LLA, verbose=False, connection_string='tcp:127.0.0.1:5760', tolerance_location=2.0, global_home=[42.47777625687639,-71.19357940183706,174.0], ekf_offset=None, max_movement_dist=50):
