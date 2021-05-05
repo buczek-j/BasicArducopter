@@ -10,7 +10,7 @@ from BasicArducopter.MavLowLevel import *
 from BasicArducopter.CommonStructs import Frames, Waypoint
 
 class BasicArdu():
-    def __init__(self, frame=Frames.LLA, verbose=False, connection_string='tcp:127.0.0.1:5760', tolerance_location=2.0, global_home=[42.47777625687639,-71.19357940183706,174.0], ekf_offset=None, max_movement_dist=50):
+    def __init__(self, frame=Frames.LLA, verbose=False, connection_string='tcp:127.0.0.1:5760', tolerance_location=2.0, global_home=None, max_movement_dist=50):
         '''
         Dronekit wrapper class for Ardupilot
         :param frame: vehicle coordinate frame
@@ -18,7 +18,6 @@ class BasicArdu():
         :param connection_string: string of ip address and port to connect 
         :param tolerance_location: float for tolerance for reaching waypoint (m)
         :param global_home: array of floats for the global origin of the drones [lat, lon, als (msl)]
-        :param ekf_offset: array of floats for manually calculated ekf offset (meters) [dNorth, dEast]
         :param max_movement_dist: float for the maximum distance between waypoints in meters
         '''
         # Vehicle Connection 
@@ -36,18 +35,36 @@ class BasicArdu():
             print(" Waiting for vehicle to initialise...")
             sleep(2)
             
-        self.home_waypoint = Waypoint(Frames.LLA, global_home[0], global_home[1], global_home[2])
-
-        # Set EKF Origin Offset
-        if ekf_offset == None:  # If ekf origin not set
-            if self.home_waypoint.current_distance(self.vehicle) >= tolerance_location:    # if ekf origin far from home lla, then approximate 
-                # this assumes that the drones are in the location at which they were turned on (better to manually specify ekf origin if possible)
-                self.ekf_origin_offset = self.home_waypoint.LLA_2_Coords(self.vehicle)
-                print(self.ekf_origin_offset)
-            else:   # otherwise assume ekf origin is at lla home
-                self.ekf_origin_offset = [0,0]
+        # Set home location   
+        if global_home == None:
+            self.global_home_waypoint = Waypoint(Frames.LLA)
+            self.global_home_waypoint.update(self.vehicle)
         else:
-            self.ekf_origin_offset = ekf_offset
+            self.global_home_waypoint = Waypoint(Frames.LLA, global_home[0], global_home[1], global_home[2])
+            
+        vehicle_home = self.vehicle.home_location
+        print("Getting Vehicle Home")
+        while vehicle_home == None:
+            # Download the vehicle waypoints (commands). Wait until download is complete. Necessary for self.vehicle.home_location to be set
+            cmds = self.vehicle.commands # https://dronekit.netlify.com/automodule.html#dronekit.Vehicle.home_location
+            cmds.download()
+            cmds.wait_ready()
+            vehicle_home = self.vehicle.home_location
+        print("Vehicle Home:", vehicle_home)
+        self.ekf_origin_offset = self.global_home_waypoint.LLA_2_Coords(self.vehicle, to_waypoint=vehicle_home)
+
+        
+
+        # # Set EKF Origin Offset
+        # if ekf_offset == None:  # If ekf origin not set
+        #     if self.home_waypoint.current_distance(self.vehicle) >= tolerance_location:    # if ekf origin far from home lla, then approximate 
+        #         # this assumes that the drones are in the location at which they were turned on (better to manually specify ekf origin if possible)
+        #         self.ekf_origin_offset = self.home_waypoint.LLA_2_Coords(self.vehicle)
+        #         print(self.ekf_origin_offset)
+        #     else:   # otherwise assume ekf origin is at lla home
+        #         self.ekf_origin_offset = [0,0]
+        # else:
+        #     self.ekf_origin_offset = ekf_offset
         
         
         # if self.home_waypoint.current_distance(self.vehicle) >= self.tolerance_location:
@@ -69,14 +86,7 @@ class BasicArdu():
         self.max_movement_dist = max_movement_dist
 
         self.verbose = verbose
-        # Set home location   
-        if global_home == None:
-            set_home(self.vehicle, self.vehicle.location.global_frame.lat, self.vehicle.location.global_frame.lon, self.vehicle.location.global_frame.alt)
-
-        # Download the vehicle waypoints (commands). Wait until download is complete. Necessary for self.vehicle.home_location to be set
-        cmds = self.vehicle.commands # https://dronekit.netlify.com/automodule.html#dronekit.Vehicle.home_location
-        cmds.download()
-        cmds.wait_ready()
+        
         print(' - - - Initialization Successful - - -')
         print("EKF Origin: ", self.ekf_origin_offset)
 
