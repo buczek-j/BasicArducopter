@@ -4,7 +4,7 @@
 Basic Dronekit Wrapper for ArduPilot controller
 '''
 
-from time import sleep
+from time import sleep, time
 from math import pi
 from BasicArducopter.MavLowLevel import *
 from BasicArducopter.CommonStructs import Frames, Waypoint
@@ -52,31 +52,6 @@ class BasicArdu():
             vehicle_home = self.vehicle.home_location
         print("Vehicle Home:", vehicle_home)
         self.ekf_origin_offset = self.global_home_waypoint.LLA_2_Coords(self.vehicle, to_waypoint=vehicle_home)
-
-        
-
-        # # Set EKF Origin Offset
-        # if ekf_offset == None:  # If ekf origin not set
-        #     if self.home_waypoint.current_distance(self.vehicle) >= tolerance_location:    # if ekf origin far from home lla, then approximate 
-        #         # this assumes that the drones are in the location at which they were turned on (better to manually specify ekf origin if possible)
-        #         self.ekf_origin_offset = self.home_waypoint.LLA_2_Coords(self.vehicle)
-        #         print(self.ekf_origin_offset)
-        #     else:   # otherwise assume ekf origin is at lla home
-        #         self.ekf_origin_offset = [0,0]
-        # else:
-        #     self.ekf_origin_offset = ekf_offset
-        
-        
-        # if self.home_waypoint.current_distance(self.vehicle) >= self.tolerance_location:
-        #         set_location_local(self.vehicle)
-
-        # Set Vehicle Parameters
-        # self.vehicle.parameters['COM_OF_LOSS_T'] = 3600		            # set offboard failsafe time (s) min: 0 max: 60? set to 3600s = 1hr
-        # self.vehicle.parameters['MPC_LAND_SPEED'] = vLandingMax 		# Landing descend rate (m/s)		[default: 0.7]
-        # self.vehicle.parameters['MPC_XY_VEL_MAX'] = vXYMax		        # maximum x-y plane velocity (m/s)	[default: 12]
-        # self.vehicle.parameters['MPC_Z_VEL_MAX_UP'] = vZUpMax	        # maximum z up velocity (m/s)		[deffault: 3]
-        # self.vehicle.parameters['MPC_Z_VEL_MAX_DN'] = vZDnMax	        # maximum z down velocity (m/s) 	[default: 1]
-        # self.vehicle.parameters['MC_YAWRATE_MAX '] = vYawMax	        # maximum yaw rate (deg/s)	        [default: 200]
 
         # Initialize flight variables
         self.frame = frame
@@ -133,7 +108,9 @@ class BasicArdu():
             print("Waiting for arming...")
             sleep(0.5)
 
-        self.vehicle.simple_takeoff(alt)
+        # self.vehicle.simple_takeoff(alt)
+        self.vehicle.wait_simple_takeoff(alt)
+
         
         # Set the vehicle to go to the target waypoint with adjusted altitude
         if self.target_waypoint.frame == Frames.LLA:
