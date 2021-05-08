@@ -214,7 +214,7 @@ class BasicArdu():
 def main():
     # simple use example
     print('---Starting Basic Drone---')
-    drone = BasicArdu(frame=Frames.LLA, connection_string='tcp:10.91.238.66:5762') # tcp:127.0.0.1:5762'    # connect to ArduPilot
+    drone = BasicArdu(frame=Frames.NED, connection_string='tcp:127.0.0.1:5762') # tcp:127.0.0.1:5762'    # connect to ArduPilot
 
     # takeoff drone
     drone.handle_takeoff(5)   
