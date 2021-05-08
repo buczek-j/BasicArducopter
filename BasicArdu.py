@@ -6,8 +6,10 @@ Basic Dronekit Wrapper for ArduPilot controller
 
 from time import sleep, time
 from math import pi
-from BasicArducopter.MavLowLevel import *
-from BasicArducopter.CommonStructs import Frames, Waypoint
+#from BasicArducopter.MavLowLevel import *
+#from BasicArducopter.CommonStructs import Frames, Waypoint
+from MavLowLevel import *
+from CommonStructs import Frames, Waypoint
 
 class BasicArdu():
     def __init__(self, frame=Frames.LLA, verbose=False, connection_string='tcp:127.0.0.1:5760', tolerance_location=2.0, global_home=None, max_movement_dist=50):
@@ -95,9 +97,9 @@ class BasicArdu():
         '''
         Method to takeoff the vehicle
         '''
-        self.target_waypoint = Waypoint(self.frame)     # Clear the target waypoint
-        self.target_waypoint.update(self.vehicle)       # Update the target location to the current location of the vehicle
-        self.target_waypoint.phi = phi
+        # self.target_waypoint = Waypoint(self.frame)     # Clear the target waypoint
+        # self.target_waypoint.update(self.vehicle)       # Update the target location to the current location of the vehicle
+        # self.target_waypoint.phi = phi
         print('~~ Take Off ~~')
 
         self.vehicle.mode = "GUIDED"
@@ -113,11 +115,11 @@ class BasicArdu():
 
         
         # Set the vehicle to go to the target waypoint with adjusted altitude
-        if self.target_waypoint.frame == Frames.LLA:
-            self.target_waypoint.alt = self.target_waypoint.alt + alt
+        # if self.target_waypoint.frame == Frames.LLA:
+        #     self.target_waypoint.alt = self.target_waypoint.alt + alt
             
-        elif self.target_waypoint.frame == Frames.NED:
-            self.target_waypoint.dDown = self.target_waypoint.dDown - alt
+        # elif self.target_waypoint.frame == Frames.NED:
+        #     self.target_waypoint.dDown = self.target_waypoint.dDown - alt
             
     def handle_landing(self):
         '''
@@ -214,11 +216,10 @@ class BasicArdu():
 def main():
     # simple use example
     print('---Starting Basic Drone---')
-    drone = BasicArdu(frame=Frames.NED, connection_string='tcp:127.0.0.1:5762') # tcp:127.0.0.1:5762'    # connect to ArduPilot
+    drone = BasicArdu(frame=Frames.NED, connection_string='tcp:192.168.10.138:5762') # tcp:127.0.0.1:5762'    # connect to ArduPilot
 
     # takeoff drone
     drone.handle_takeoff(5)   
-    drone.wait_for_target()   # wait to reach desired location
     sleep(3)
 
     # goto first waypoint
