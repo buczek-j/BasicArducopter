@@ -6,6 +6,14 @@ Basic Dronekit Wrapper for ArduPilot controller
 from argparse import ArgumentParser
 from time import sleep, time
 from math import pi
+
+# Necessary For Package imports
+import sys
+import os
+PACKAGE_PARENT = '..'
+SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
+sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
+
 from BasicArducopter.tools.MavLowLevel import *
 from BasicArducopter.tools.CommonStructs import Frames, Waypoint, xyz_to_latlon
 # from MavLowLevel import *
