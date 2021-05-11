@@ -14,10 +14,10 @@ PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
-from BasicArducopter.tools.MavLowLevel import *
-from BasicArducopter.tools.CommonStructs import Frames, Waypoint, xyz_to_latlon
-# from MavLowLevel import *
-# from CommonStructs import Frames, Waypoint, xyz_to_latlon
+# from BasicArducopter.tools.MavLowLevel import *
+# from BasicArducopter.tools.CommonStructs import Frames, Waypoint, xyz_to_latlon
+from tools.MavLowLevel import *
+from tools.CommonStructs import Frames, Waypoint, xyz_to_latlon
 
 class BasicArdu():
     def __init__(self, frame=Frames.LLA, verbose=False, connection_string='tcp:127.0.0.1:5762', tolerance_location=2.0, global_home=None, max_movement_dist=50):
