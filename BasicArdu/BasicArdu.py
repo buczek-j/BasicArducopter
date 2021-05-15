@@ -14,8 +14,10 @@ PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
-from BasicArducopter.tools.MavLowLevel import *
-from BasicArducopter.tools.CommonStructs import Frames, Waypoint, xyz_to_latlon
+#from BasicArducopter.tools.MavLowLevel import *
+#from BasicArducopter.tools.CommonStructs import Frames, Waypoint, xyz_to_latlon
+from tools.MavLowLevel import *
+from tools.CommonStructs import Frames, Waypoint, xyz_to_latlon
 # from MavLowLevel import *
 # from CommonStructs import Frames, Waypoint, xyz_to_latlon
 
