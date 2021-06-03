@@ -1,14 +1,28 @@
+#!/usr/bin/env python3
+
 '''
 Basic Dronekit Wrapper for ArduPilot controller
 '''
-
-from time import sleep
+from argparse import ArgumentParser
+from time import sleep, time
 from math import pi
-from MavLowLevel import *
-from CommonStructs import Frames, Waypoint
+
+# Necessary For Package imports
+import sys
+import os
+PACKAGE_PARENT = '..'
+SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
+sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
+
+#from BasicArducopter.tools.MavLowLevel import *
+#from BasicArducopter.tools.CommonStructs import Frames, Waypoint, xyz_to_latlon
+from tools.MavLowLevel import *
+from tools.CommonStructs import Frames, Waypoint, xyz_to_latlon
+# from MavLowLevel import *
+# from CommonStructs import Frames, Waypoint, xyz_to_latlon
 
 class BasicArdu():
-    def __init__(self, frame=Frames.LLA, verbose=False, connection_string='tcp:127.0.0.1:5760', tolerance_location=2.0, global_home=[42.47777625687639,-71.19357940183706,174.0], ekf_offset=None):
+    def __init__(self, frame=Frames.LLA, verbose=False, connection_string='tcp:127.0.0.1:5762', tolerance_location=2.0, global_home=None, max_movement_dist=50):
         '''
         Dronekit wrapper class for Ardupilot
         :param frame: vehicle coordinate frame
@@ -16,15 +30,10 @@ class BasicArdu():
         :param connection_string: string of ip address and port to connect 
         :param tolerance_location: float for tolerance for reaching waypoint (m)
         :param global_home: array of floats for the global origin of the drones [lat, lon, als (msl)]
-        :param ekf_offset: array of floats for manually calculated ekf offset (meters) [dNorth, dEast]
+        :param max_movement_dist: float for the maximum distance between waypoints in meters
         '''
         # Vehicle Connection 
-        while True:
-            try:
-                self.vehicle = connect(connection_string, wait_ready=False)
-                break
-            except:
-                pass    
+        self.vehicle = connect(connection_string, wait_ready=False)
         
         if self.vehicle.armed:                # If the vehicle is already in the air, set to standby mode
             self.vehicle.mode = "GUIDED"
@@ -32,48 +41,42 @@ class BasicArdu():
         while not self.vehicle.is_armable:
             print(" Waiting for vehicle to initialise...")
             sleep(2)
-            
-        self.home_waypoint = Waypoint(Frames.LLA, global_home[0], global_home[1], global_home[2])
+        
+        while self.vehicle.gps_0.fix_type < 2:
+            print("Waiting for GPS...:", self.vehicle.gps_0.fix_type)
+            sleep(2)
 
-        # Set EKF Origin Offset
-        if ekf_offset == None:  # If ekf origin not set
-            if self.home_waypoint.current_distance(self.vehicle) >= tolerance_location:    # if ekf origin far from home lla, then approximate 
-                # this assumes that the drones are in the location at which they were turned on (better to manually specify ekf origin if possible)
-                self.ekf_origin_offset = self.home_waypoint.LLA_2_Coords(self.vehicle)
-            else:   # otherwise assume ekf origin is at lla home
-                self.ekf_origin_offset = [0,0]
+        # Get Vehicle Home
+        vehicle_home = self.vehicle.home_location
+        if verbose:
+            print("Getting Vehicle Home")
+        while vehicle_home == None:
+            # Download the vehicle waypoints (commands). Wait until download is complete. Necessary for self.vehicle.home_location to be set
+            cmds = self.vehicle.commands # https://dronekit.netlify.com/automodule.html#dronekit.Vehicle.home_location
+            cmds.download()
+            cmds.wait_ready()
+            vehicle_home = self.vehicle.home_location
+        if verbose:
+            print("Vehicle Home:", vehicle_home)
+
+        # Set Global home location   
+        if global_home == None:
+            self.global_home_waypoint = Waypoint()
+            self.global_home_waypoint.update(self.vehicle)
+            self.global_home_waypoint.alt = vehicle_home.alt
         else:
-            self.ekf_origin_offset = ekf_offset
-        
-        
-        # if self.home_waypoint.current_distance(self.vehicle) >= self.tolerance_location:
-        #         set_location_local(self.vehicle)
+            self.global_home_waypoint = Waypoint(x=global_home[0], y=global_home[1], z=global_home[2])
 
-        # Set Vehicle Parameters
-        # self.vehicle.parameters['COM_OF_LOSS_T'] = 3600		            # set offboard failsafe time (s) min: 0 max: 60? set to 3600s = 1hr
-        # self.vehicle.parameters['MPC_LAND_SPEED'] = vLandingMax 		# Landing descend rate (m/s)		[default: 0.7]
-        # self.vehicle.parameters['MPC_XY_VEL_MAX'] = vXYMax		        # maximum x-y plane velocity (m/s)	[default: 12]
-        # self.vehicle.parameters['MPC_Z_VEL_MAX_UP'] = vZUpMax	        # maximum z up velocity (m/s)		[deffault: 3]
-        # self.vehicle.parameters['MPC_Z_VEL_MAX_DN'] = vZDnMax	        # maximum z down velocity (m/s) 	[default: 1]
-        # self.vehicle.parameters['MC_YAWRATE_MAX '] = vYawMax	        # maximum yaw rate (deg/s)	        [default: 200]
 
         # Initialize flight variables
-        self.frame = frame
         self.tolerance_location = tolerance_location # minimum distance variance to waypoint (meters)
-        self.target_waypoint = Waypoint(self.frame)                   # current target waypoint
+        self.target_waypoint = Waypoint()                   # current target waypoint
         self.target_waypoint.update(self.vehicle)
+        self.max_movement_dist = max_movement_dist
 
         self.verbose = verbose
-        # Set home location   
-        if global_home == None:
-            set_home(self.vehicle, self.vehicle.location.global_frame.lat, self.vehicle.location.global_frame.lon, self.vehicle.location.global_frame.alt)
-
-        # Download the vehicle waypoints (commands). Wait until download is complete. Necessary for self.vehicle.home_location to be set
-        cmds = self.vehicle.commands # https://dronekit.netlify.com/automodule.html#dronekit.Vehicle.home_location
-        cmds.download()
-        cmds.wait_ready()
+        
         print(' - - - Initialization Successful - - -')
-        print("EKF Origin: ", self.ekf_origin_offset)
 
     def handle_arm(self):
         '''
@@ -105,9 +108,6 @@ class BasicArdu():
         '''
         Method to takeoff the vehicle
         '''
-        self.target_waypoint = Waypoint(self.frame)     # Clear the target waypoint
-        self.target_waypoint.update(self.vehicle)       # Update the target location to the current location of the vehicle
-        self.target_waypoint.phi = phi
         print('~~ Take Off ~~')
 
         self.vehicle.mode = "GUIDED"
@@ -118,21 +118,16 @@ class BasicArdu():
             print("Waiting for arming...")
             sleep(0.5)
 
-        self.vehicle.simple_takeoff(alt)
-        
-        # Set the vehicle to go to the target waypoint with adjusted altitude
-        if self.target_waypoint.frame == Frames.LLA:
-            self.target_waypoint.alt = self.target_waypoint.alt + alt
-            
-        elif self.target_waypoint.frame == Frames.NED:
-            self.target_waypoint.dDown = self.target_waypoint.dDown - alt
-            
+        self.vehicle.wait_simple_takeoff(alt)
+         
     def handle_landing(self):
         '''
         Method to land the vehicle
         '''
         print("~~ Landing ~~")
         land_vehicle(self.vehicle)
+        while self.vehicle.armed:
+            sleep(0.5)
 
     def handle_waypoint(self, frame, x, y, z, phi=0):
         '''
@@ -148,15 +143,22 @@ class BasicArdu():
             velocity_cmd_NED(self.vehicle, x, y, z, phi)
             self.target_waypoint=None 
         else:
-            if frame.value == Frames.LLA.value:
+            if frame.value == Frames.LLA.value: # If LLA, set target directly
                 print('LLA', x, y, z, phi)
-                self.target_waypoint = Waypoint(frame=Frames.LLA, x=x, y=y, z=z, compass_angle=phi)
-                waypoint_cmd_LLA(self.vehicle, x, y, z, phi)
-            elif frame.value == Frames.NED.value:
+                self.target_waypoint = Waypoint( x=x, y=y, z=z, compass_angle=phi)
+
+            elif frame.value == Frames.NED.value:   # if NED, convert to LLA
                 print('NED', x, y, z, phi)
-                self.target_waypoint = Waypoint(frame=Frames.NED, x=x- self.ekf_origin_offset[0], y=y-self.ekf_origin_offset[1], z=z, compass_angle=phi)
-                waypoint_cmd_NED(self.vehicle, x - self.ekf_origin_offset[0], y - self.ekf_origin_offset[1], z, phi)
-            # self.target_waypoint.print()
+                self.target_waypoint = xyz_to_latlon(self.global_home_waypoint, x, y, z)
+
+            if self.target_waypoint.current_distance(self.vehicle) <= self.max_movement_dist:
+                waypoint_cmd_LLA(self.vehicle, self.target_waypoint.lat, self.target_waypoint.lon, self.target_waypoint.alt, phi)
+            else:
+                print('Cancelling Movement - Waypoint Too Far Away')
+                self.target_waypoint = None
+
+        if self.target_waypoint:
+            self.wait_for_target()
 
     def handle_hold(self):
         '''
@@ -165,7 +167,7 @@ class BasicArdu():
         if self.verbose:
             print('> Hold')
 
-        self.target_waypoint = Waypoint(self.frame)     # Clear the target waypoint
+        self.target_waypoint = Waypoint()     # Clear the target waypoint
         self.target_waypoint.update(self.vehicle)       # Update the target location to the current location of the vehicle
         # Set the vehicle to go to the target waypoint
         if self.target_waypoint.frame == Frames.LLA:
@@ -184,7 +186,6 @@ class BasicArdu():
             if self.target_waypoint.current_distance(self.vehicle) <= self.tolerance_location:
                 self.target_waypoint = None 
             else:
-                # print("Drone location: ", self.vehicle.location.local_frame, "Target location: " ,self.target_waypoint.dNorth, self.target_waypoint.dEast, self.target_waypoint.dDown ,"Distance to target", self.target_waypoint.current_distance(self.vehicle))
                 return False
         
         else:               # if the drone has reached its target, then the target waypoint is set to None
@@ -194,11 +195,18 @@ class BasicArdu():
         ''' 
         Method to delay code progression until the target location has been reached
         '''
+        start_time = time()
         while not self.reached_target():
             sleep(0.5)
 
+            if time()-start_time>15.0:      # timeout for if stuck travelling to a waypoint
+                print("WARNING: WAYPOINT NEVER REACHED")
+                print("Distance to target:", self.target_waypoint.current_distance(self.vehicle))
+                break
+
         if self.verbose:
             print('Reached Target')
+
     
     def get_LLA(self):
         '''
@@ -208,28 +216,27 @@ class BasicArdu():
         return self.vehicle.location.global_frame.lat, self.vehicle.location.global_frame.lon, self.vehicle.location.global_frame.alt
 
 def main():
+    parser = ArgumentParser()
+    parser.add_argument('--connection_string', type=str, default='tcp:192.168.10.138:5762', help='Ardupilot connection string')
+    options = parser.parse_args()
+
     # simple use example
-    print('---Starting Basic Drone---')
-    drone = BasicArdu(frame=Frames.LLA, connection_string='tcp:10.91.238.66:5762') # tcp:127.0.0.1:5762'    # connect to ArduPilot
+    drone = BasicArdu(connection_string=options.connection_string)    # connect to ArduPilot
 
     # takeoff drone
     drone.handle_takeoff(5)   
-    drone.wait_for_target()   # wait to reach desired location
     sleep(3)
 
-    # goto first waypoint
+    # goto first waypoint (6m north, 0 meters east, 5 meters up, facing North)
     drone.handle_waypoint(Frames.NED, 6, 0, -5, 0)
-    drone.wait_for_target()
     sleep(3)
 
-    # goto second wayoint
-    drone.handle_waypoint(Frames.NED, 0, 5, -5, 0)
-    drone.wait_for_target()
+    # goto second wayoint(0m north, 5 meters east, 5 meters up, facing South)
+    drone.handle_waypoint(Frames.NED, 0, 5, -5, 3.14)
     sleep(3)
 
-    # goto Home wayoint
+    # goto Home wayoint (0m north, 0 meters east, 5 meters up, facing North)
     drone.handle_waypoint(Frames.NED, 0, 0, -5, 0)
-    drone.wait_for_target()
     sleep(3)
 
     # land
