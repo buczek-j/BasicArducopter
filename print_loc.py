@@ -1,4 +1,4 @@
-from BasicArdu import BasicArdu, Frames
+from BasicArdu.BasicArdu import BasicArdu, Frames
 
 '''
 Program to print out the location and other telemetry from the drone for debugging
